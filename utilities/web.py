@@ -28,11 +28,18 @@ def get_random_string(length):
 
 async def initial_setup(context, message, credentials):
     """Initial setup for the account."""
-    confirm_link = (re.findall(r"(https?:[^ ]*)",
-                               str(message))[0]).replace("Best", "")[:-4]
+    all_links = re.findall(r'href="https://mega\.nz/#confirm[^\"]+', str(message))
+    if all_links:
+        confirm_link = all_links[0].split('href="')[1]
+    else:
+        print("We couldn't find the confirmation link in the email.")
+        return
 
     confirm_page = await context.newPage()
     await confirm_page.goto(confirm_link)
+    email_field = "#login-name2"
+    await confirm_page.waitForSelector(email_field)
+    await confirm_page.type(email_field, credentials["email"])
     confirm_field = "#login-password2"
     await confirm_page.waitForSelector(confirm_field)
     await confirm_page.click(confirm_field)
@@ -40,7 +47,7 @@ async def initial_setup(context, message, credentials):
     await confirm_page.click(".login-button")
     await confirm_page.waitForSelector("#freeStart")
     await confirm_page.click("#freeStart")
-
+    
 
 async def save_credentials(credentials):
     """Pass credentials into a file."""
